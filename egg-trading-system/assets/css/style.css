@@ -1,0 +1,27 @@
+.login-bg {
+    background: linear-gradient(135deg, #fff3cd, #f8f9fa);
+}
+
+.dashboard-card {
+    border-left: 5px solid #ffc107;
+}
+
+.card {
+    border-radius: 6px;
+}
+
+.btn {
+    border-radius: 3px;
+}
+
+.table {
+    background-color: white;
+}
+
+.navbar .btn {
+    margin-left: 4px;
+}
+
+body {
+    font-size: 14px;
+}
