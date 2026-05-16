@@ -87,7 +87,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     <div class="text-center mt-3 small text-muted">
                         Username: admin <br>
-                        Password: admin123
+                        Password: admin
                     </div>
 
                 </div>
