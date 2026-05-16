@@ -11,6 +11,23 @@ require_once __DIR__ . "/config/database.php";
 $database = new Database();
 $conn = $database->connect();
 
+/** @var mysqli $conn */
+
+$page = $_GET['page'] ?? 'home';
+
+$allowed_pages = [
+    'home',
+    'add_batch',
+    'view_batches',
+    'grade_batch',
+    'customers',
+    'sales'
+];
+
+if (!in_array($page, $allowed_pages)) {
+    $page = 'home';
+}
+
 $totalBatches = $conn->query("SELECT COUNT(*) AS total FROM egg_batches")->fetch_assoc()['total'];
 $totalEggs = $conn->query("SELECT COALESCE(SUM(total_eggs), 0) AS total FROM egg_batches")->fetch_assoc()['total'];
 $totalSales = $conn->query("SELECT COALESCE(SUM(total_amount), 0) AS total FROM egg_sales")->fetch_assoc()['total'];
@@ -37,10 +54,11 @@ $totalCustomers = $conn->query("SELECT COUNT(*) AS total FROM customers")->fetch
         </a>
 
         <div>
-            <a href="pages/add_batch.php" class="btn btn-outline-light btn-sm">Add Batch</a>
-            <a href="pages/view_batches.php" class="btn btn-outline-light btn-sm">Batches</a>
-            <a href="pages/customers.php" class="btn btn-outline-light btn-sm">Customers</a>
-            <a href="pages/sales.php" class="btn btn-outline-light btn-sm">Sales</a>
+            <a href="dashboard.php" class="btn btn-outline-light btn-sm">Dashboard</a>
+            <a href="dashboard.php?page=add_batch" class="btn btn-outline-light btn-sm">Add Batch</a>
+            <a href="dashboard.php?page=view_batches" class="btn btn-outline-light btn-sm">Batches</a>
+            <a href="dashboard.php?page=customers" class="btn btn-outline-light btn-sm">Customers</a>
+            <a href="dashboard.php?page=sales" class="btn btn-outline-light btn-sm">Sales</a>
             <a href="logout.php" class="btn btn-warning btn-sm">Logout</a>
         </div>
 
@@ -49,9 +67,11 @@ $totalCustomers = $conn->query("SELECT COUNT(*) AS total FROM customers")->fetch
 
 <div class="container mt-4">
 
+    <!-- DASHBOARD HEADER ALWAYS VISIBLE -->
     <h3>Dashboard</h3>
     <p>Welcome, <?= htmlspecialchars($_SESSION['fullname']); ?></p>
 
+    <!-- DASHBOARD CARDS ALWAYS VISIBLE -->
     <div class="row mt-4">
 
         <div class="col-md-3">
@@ -94,12 +114,34 @@ $totalCustomers = $conn->query("SELECT COUNT(*) AS total FROM customers")->fetch
 
     <hr>
 
-    <a href="pages/add_batch.php" class="btn btn-warning">Add Egg Batch</a>
-    <a href="pages/view_batches.php" class="btn btn-primary">View Batches</a>
-    <a href="pages/customers.php" class="btn btn-success">Customers</a>
-    <a href="pages/sales.php" class="btn btn-info">Sales</a>
+    <!-- MODULE CONTENT LOADS BELOW DASHBOARD CARDS -->
+    <div class="mt-4">
+
+        <?php
+        if ($page === 'home') {
+            echo '
+                <div class="alert alert-light border">
+                    Select a module from the navigation bar above.
+                </div>
+            ';
+        } elseif ($page === 'add_batch') {
+            include __DIR__ . "/pages/add_batch.php";
+        } elseif ($page === 'view_batches') {
+            include __DIR__ . "/pages/view_batches.php";
+        } elseif ($page === 'grade_batch') {
+            include __DIR__ . "/pages/grade_batch.php";
+        } elseif ($page === 'customers') {
+            include __DIR__ . "/pages/customers.php";
+        } elseif ($page === 'sales') {
+            include __DIR__ . "/pages/sales.php";
+        }
+        ?>
+
+    </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
