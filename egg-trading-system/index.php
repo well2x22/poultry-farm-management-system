@@ -84,12 +84,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             Login
                         </button>
                     </form>
-
-                    <div class="text-center mt-3 small text-muted">
-                        Username: admin <br>
-                        Password: admin
-                    </div>
-
                 </div>
             </div>
 
