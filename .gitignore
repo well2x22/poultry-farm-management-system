@@ -1,0 +1,16 @@
+# Laravel / PHP
+vendor/
+.env
+
+# Node if ever used
+node_modules/
+
+# Logs
+*.log
+
+# Windows files
+Thumbs.db
+desktop.ini
+
+# VS Code optional
+.vscode/
