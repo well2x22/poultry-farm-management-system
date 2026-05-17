@@ -29,9 +29,28 @@ if (!in_array($page, $allowed_pages)) {
 }
 
 $totalBatches = $conn->query("SELECT COUNT(*) AS total FROM egg_batches")->fetch_assoc()['total'];
-$totalEggs = $conn->query("SELECT COALESCE(SUM(total_eggs), 0) AS total FROM egg_batches")->fetch_assoc()['total'];
-$totalSales = $conn->query("SELECT COALESCE(SUM(total_amount), 0) AS total FROM egg_sales")->fetch_assoc()['total'];
-$totalCustomers = $conn->query("SELECT COUNT(*) AS total FROM customers")->fetch_assoc()['total'];
+
+$totalEggs = $conn->query("
+    SELECT COALESCE(SUM(total_eggs), 0) AS total 
+    FROM egg_batches
+")->fetch_assoc()['total'];
+
+$totalGradedEggs = $conn->query("
+    SELECT COALESCE(SUM(quantity), 0) AS total 
+    FROM egg_grades
+")->fetch_assoc()['total'];
+
+$totalNotGradedEggs = max(0, $totalEggs - $totalGradedEggs);
+
+$totalSales = $conn->query("
+    SELECT COALESCE(SUM(total_amount), 0) AS total 
+    FROM egg_sales
+")->fetch_assoc()['total'];
+
+$totalCustomers = $conn->query("
+    SELECT COUNT(*) AS total 
+    FROM customers
+")->fetch_assoc()['total'];
 ?>
 
 <!DOCTYPE html>
@@ -74,43 +93,61 @@ $totalCustomers = $conn->query("SELECT COUNT(*) AS total FROM customers")->fetch
     <!-- DASHBOARD CARDS ALWAYS VISIBLE -->
     <div class="row mt-4">
 
-        <div class="col-md-3">
-            <div class="card shadow-sm dashboard-card">
-                <div class="card-body">
-                    <h6>Total Batches</h6>
-                    <h2><?= $totalBatches; ?></h2>
-                </div>
+    <div class="col-md-2">
+        <div class="card shadow-sm dashboard-card">
+            <div class="card-body">
+                <h6>Total Batches</h6>
+                <h2><?= $totalBatches; ?></h2>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm dashboard-card">
-                <div class="card-body">
-                    <h6>Total Eggs</h6>
-                    <h2><?= $totalEggs; ?></h2>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm dashboard-card">
-                <div class="card-body">
-                    <h6>Total Customers</h6>
-                    <h2><?= $totalCustomers; ?></h2>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm dashboard-card">
-                <div class="card-body">
-                    <h6>Total Sales</h6>
-                    <h2>₱<?= number_format($totalSales, 2); ?></h2>
-                </div>
-            </div>
-        </div>
-
     </div>
+
+    <div class="col-md-2">
+        <div class="card shadow-sm dashboard-card">
+            <div class="card-body">
+                <h6>Total Eggs</h6>
+                <h2><?= $totalEggs; ?></h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow-sm dashboard-card">
+            <div class="card-body">
+                <h6>Graded Eggs</h6>
+                <h2><?= $totalGradedEggs; ?></h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow-sm dashboard-card">
+            <div class="card-body">
+                <h6>Not Graded</h6>
+                <h2><?= $totalNotGradedEggs; ?></h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow-sm dashboard-card">
+            <div class="card-body">
+                <h6>Total Customers</h6>
+                <h2><?= $totalCustomers; ?></h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow-sm dashboard-card">
+            <div class="card-body">
+                <h6>Total Sales</h6>
+                <h2>₱<?= number_format($totalSales, 2); ?></h2>
+            </div>
+        </div>
+    </div>
+
+</div>
 
     <hr>
 
