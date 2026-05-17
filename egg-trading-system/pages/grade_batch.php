@@ -28,7 +28,10 @@ if (!$batch) {
     return;
 }
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+/* =========================
+   SAVE GRADING
+========================= */
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_grading'])) {
     $large = intval($_POST['large'] ?? 0);
     $medium = intval($_POST['medium'] ?? 0);
     $small = intval($_POST['small'] ?? 0);
@@ -54,8 +57,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($quantity > 0) {
                 $insertStmt = $conn->prepare("
                     INSERT INTO egg_grades 
-                    (batch_id, grade, quantity) 
-                    VALUES (?, ?, ?)
+                    (batch_id, grade, quantity, sent_to_inventory) 
+                    VALUES (?, ?, ?, 0)
                 ");
 
                 $insertStmt->bind_param("isi", $batch_id, $grade, $quantity);
@@ -67,6 +70,86 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
+/* =========================
+   SEND TO INVENTORY API
+========================= */
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['send_inventory'])) {
+    $apiUrl = "http://127.0.0.1:8001/api/egg-inventory";
+
+    $gradeStmt = $conn->prepare("
+        SELECT egg_grades.*, egg_batches.batch_code
+        FROM egg_grades
+        INNER JOIN egg_batches ON egg_grades.batch_id = egg_batches.id
+        WHERE egg_grades.batch_id = ?
+        AND egg_grades.sent_to_inventory = 0
+    ");
+
+    $gradeStmt->bind_param("i", $batch_id);
+    $gradeStmt->execute();
+
+    $gradesResult = $gradeStmt->get_result();
+
+    if ($gradesResult->num_rows === 0) {
+        $message = "No unsent grading records found. This batch may already be sent to inventory.";
+    } else {
+        $successCount = 0;
+        $errorMessages = [];
+
+        while ($gradeRow = $gradesResult->fetch_assoc()) {
+            $data = [
+                "batch_code" => $gradeRow['batch_code'],
+                "egg_size" => $gradeRow['grade'],
+                "quantity" => intval($gradeRow['quantity']),
+                "received_date" => date("Y-m-d")
+            ];
+
+            $ch = curl_init($apiUrl);
+
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "Accept: application/json",
+                "Content-Type: application/json"
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+
+            curl_close($ch);
+
+            if ($curlError) {
+                $errorMessages[] = "CURL Error for {$gradeRow['grade']}: " . $curlError;
+                continue;
+            }
+
+            if ($httpCode === 200 || $httpCode === 201) {
+                $updateStmt = $conn->prepare("
+                    UPDATE egg_grades 
+                    SET sent_to_inventory = 1 
+                    WHERE id = ?
+                ");
+
+                $updateStmt->bind_param("i", $gradeRow['id']);
+                $updateStmt->execute();
+
+                $successCount++;
+            } else {
+                $errorMessages[] = "API Error for {$gradeRow['grade']}: HTTP $httpCode - $response";
+            }
+        }
+
+        if ($successCount > 0 && empty($errorMessages)) {
+            $message = "Graded eggs sent to inventory successfully.";
+        } elseif ($successCount > 0 && !empty($errorMessages)) {
+            $message = "Some records were sent, but some failed: " . implode(" | ", $errorMessages);
+        } else {
+            $message = "Failed to send records to inventory: " . implode(" | ", $errorMessages);
+        }
+    }
+}
+
 $existingStmt = $conn->prepare("SELECT * FROM egg_grades WHERE batch_id = ?");
 $existingStmt->bind_param("i", $batch_id);
 $existingStmt->execute();
@@ -75,10 +158,6 @@ $existingGrades = $existingStmt->get_result();
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4>Grade Egg Batch</h4>
-
-    <a href="dashboard.php?page=view_batches" class="btn btn-secondary">
-        Back to Batches
-    </a>
 </div>
 
 <div class="alert alert-secondary">
@@ -122,7 +201,7 @@ $existingGrades = $existingStmt->get_result();
 
             </div>
 
-            <button type="submit" class="btn btn-warning mt-3">
+            <button type="submit" name="save_grading" class="btn btn-warning mt-3">
                 Save Grading
             </button>
 
@@ -148,7 +227,13 @@ $existingGrades = $existingStmt->get_result();
                 <tr>
                     <td><?= htmlspecialchars($row['grade']); ?></td>
                     <td><?= htmlspecialchars($row['quantity']); ?></td>
-                    <td><?= $row['sent_to_inventory'] ? "Yes" : "No"; ?></td>
+                    <td>
+                        <?php if ($row['sent_to_inventory']): ?>
+                            <span class="badge bg-success">Yes</span>
+                        <?php else: ?>
+                            <span class="badge bg-warning text-dark">No</span>
+                        <?php endif; ?>
+                    </td>
                 </tr>
             <?php endwhile; ?>
         <?php else: ?>
@@ -158,3 +243,14 @@ $existingGrades = $existingStmt->get_result();
         <?php endif; ?>
     </tbody>
 </table>
+
+<form method="POST" action="dashboard.php?page=grade_batch&id=<?= $batch_id; ?>">
+    <button 
+        type="submit" 
+        name="send_inventory" 
+        class="btn btn-success"
+        onclick="return confirm('Send unsent graded eggs to inventory API?');"
+    >
+        Send to Inventory API
+    </button>
+</form>
