@@ -28,11 +28,27 @@ class EggInventoryController extends Controller
             'received_date' => 'required|date',
         ]);
 
+        $inventory = EggInventory::where('batch_code', $validated['batch_code'])
+            ->where('egg_size', $validated['egg_size'])
+            ->first();
+
+        if ($inventory) {
+            $inventory->quantity += $validated['quantity'];
+            $inventory->received_date = $validated['received_date'];
+            $inventory->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Existing egg inventory updated successfully.',
+                'data' => $inventory
+            ], 200);
+        }
+
         $inventory = EggInventory::create($validated);
 
         return response()->json([
             'status' => true,
-            'message' => 'Egg inventory saved successfully.',
+            'message' => 'New egg inventory saved successfully.',
             'data' => $inventory
         ], 201);
     }

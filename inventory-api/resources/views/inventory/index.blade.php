@@ -37,7 +37,20 @@
         This page displays egg inventory records received from the PHP Egg Trading and Grading System.
     </p>
 
+    <!-- TOTAL EGGS CARD -->
     <div class="row mt-4 mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0 bg-warning">
+                <div class="card-body">
+                    <h5>Total Eggs in Inventory</h5>
+                    <h1>{{ $totalEggs }}</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EGG SIZE SUMMARY CARDS -->
+    <div class="row mb-4">
 
         @php
             $sizes = ['Large', 'Medium', 'Small', 'Cracked'];

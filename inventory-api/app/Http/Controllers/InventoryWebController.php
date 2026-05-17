@@ -14,6 +14,12 @@ class InventoryWebController extends Controller
             ->groupBy('egg_size')
             ->get();
 
-        return view('inventory.index', compact('inventories', 'summary'));
+        $totalEggs = EggInventory::sum('quantity');
+
+        return view('inventory.index', compact(
+            'inventories',
+            'summary',
+            'totalEggs'
+        ));
     }
 }
