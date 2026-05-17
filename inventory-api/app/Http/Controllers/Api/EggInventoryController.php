@@ -33,7 +33,7 @@ class EggInventoryController extends Controller
             ->first();
 
         if ($inventory) {
-            $inventory->quantity += $validated['quantity'];
+            $inventory->quantity = $validated['quantity'];
             $inventory->received_date = $validated['received_date'];
             $inventory->save();
 

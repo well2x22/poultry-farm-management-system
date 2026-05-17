@@ -9,6 +9,7 @@ if (!isset($conn)) {
 /** @var mysqli $conn */
 
 $message = "";
+$messageType = "info";
 
 if (!isset($_GET['id'])) {
     echo "<div class='alert alert-danger'>No batch selected.</div>";
@@ -28,6 +29,8 @@ if (!$batch) {
     return;
 }
 
+$totalEggsInBatch = intval($batch['total_eggs']);
+
 /* =========================
    SAVE GRADING
 ========================= */
@@ -37,10 +40,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_grading'])) {
     $small = intval($_POST['small'] ?? 0);
     $cracked = intval($_POST['cracked'] ?? 0);
 
-    $total_grades = $large + $medium + $small + $cracked;
+    $totalGradedEggs = $large + $medium + $small + $cracked;
 
-    if ($total_grades > $batch['total_eggs']) {
-        $message = "Graded eggs cannot exceed total eggs in the batch.";
+    if ($large < 0 || $medium < 0 || $small < 0 || $cracked < 0) {
+        $message = "Egg quantities cannot be negative.";
+        $messageType = "danger";
+    } elseif ($totalGradedEggs <= 0) {
+        $message = "Please enter at least one egg quantity.";
+        $messageType = "danger";
+    } elseif ($totalGradedEggs > $totalEggsInBatch) {
+        $excess = $totalGradedEggs - $totalEggsInBatch;
+
+        $message = "Graded eggs cannot exceed total eggs in the batch. Total eggs: {$totalEggsInBatch}, graded eggs: {$totalGradedEggs}, excess: {$excess}.";
+        $messageType = "danger";
     } else {
         $deleteStmt = $conn->prepare("DELETE FROM egg_grades WHERE batch_id = ?");
         $deleteStmt->bind_param("i", $batch_id);
@@ -66,108 +78,131 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_grading'])) {
             }
         }
 
-        $message = "Egg grading saved successfully.";
+        $remaining = $totalEggsInBatch - $totalGradedEggs;
+
+        $message = "Egg grading saved successfully. Remaining ungraded eggs: {$remaining}.";
+        $messageType = "success";
     }
 }
 
 /* =========================
    SEND TO INVENTORY API
 ========================= */
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['send_inventory'])) {
-    $apiUrl = "http://127.0.0.1:8001/api/egg-inventory";
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_grading'])) {
+    $large = intval($_POST['large'] ?? 0);
+    $medium = intval($_POST['medium'] ?? 0);
+    $small = intval($_POST['small'] ?? 0);
+    $cracked = intval($_POST['cracked'] ?? 0);
 
-    $gradeStmt = $conn->prepare("
-        SELECT egg_grades.*, egg_batches.batch_code
-        FROM egg_grades
-        INNER JOIN egg_batches ON egg_grades.batch_id = egg_batches.id
-        WHERE egg_grades.batch_id = ?
-        AND egg_grades.sent_to_inventory = 0
+    $totalGradedEggs = $large + $medium + $small + $cracked;
+
+    $sentCheckStmt = $conn->prepare("
+        SELECT COUNT(*) AS total_sent 
+        FROM egg_grades 
+        WHERE batch_id = ? 
+        AND sent_to_inventory = 1
     ");
+    $sentCheckStmt->bind_param("i", $batch_id);
+    $sentCheckStmt->execute();
+    $totalSentRecords = intval($sentCheckStmt->get_result()->fetch_assoc()['total_sent']);
 
-    $gradeStmt->bind_param("i", $batch_id);
-    $gradeStmt->execute();
-
-    $gradesResult = $gradeStmt->get_result();
-
-    if ($gradesResult->num_rows === 0) {
-        $message = "No unsent grading records found. This batch may already be sent to inventory.";
+    if ($totalSentRecords > 0) {
+        $message = "This batch was already sent to inventory. You cannot edit grading after sending.";
+        $messageType = "danger";
+    } elseif ($large < 0 || $medium < 0 || $small < 0 || $cracked < 0) {
+        $message = "Egg quantities cannot be negative.";
+        $messageType = "danger";
+    } elseif ($totalGradedEggs <= 0) {
+        $message = "Please enter at least one egg quantity.";
+        $messageType = "danger";
+    } elseif ($totalGradedEggs > $totalEggsInBatch) {
+        $excess = $totalGradedEggs - $totalEggsInBatch;
+        $message = "Graded eggs cannot exceed total eggs in the batch. Total eggs: {$totalEggsInBatch}, graded eggs: {$totalGradedEggs}, excess: {$excess}.";
+        $messageType = "danger";
     } else {
-        $successCount = 0;
-        $errorMessages = [];
+        $deleteStmt = $conn->prepare("DELETE FROM egg_grades WHERE batch_id = ?");
+        $deleteStmt->bind_param("i", $batch_id);
+        $deleteStmt->execute();
 
-        while ($gradeRow = $gradesResult->fetch_assoc()) {
-            $data = [
-                "batch_code" => $gradeRow['batch_code'],
-                "egg_size" => $gradeRow['grade'],
-                "quantity" => intval($gradeRow['quantity']),
-                "received_date" => date("Y-m-d")
-            ];
+        $grades = [
+            "Large" => $large,
+            "Medium" => $medium,
+            "Small" => $small,
+            "Cracked" => $cracked
+        ];
 
-            $ch = curl_init($apiUrl);
-
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                "Accept: application/json",
-                "Content-Type: application/json"
-            ]);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-
-            curl_close($ch);
-
-            if ($curlError) {
-                $errorMessages[] = "CURL Error for {$gradeRow['grade']}: " . $curlError;
-                continue;
-            }
-
-            if ($httpCode === 200 || $httpCode === 201) {
-                $updateStmt = $conn->prepare("
-                    UPDATE egg_grades 
-                    SET sent_to_inventory = 1 
-                    WHERE id = ?
+        foreach ($grades as $grade => $quantity) {
+            if ($quantity > 0) {
+                $insertStmt = $conn->prepare("
+                    INSERT INTO egg_grades 
+                    (batch_id, grade, quantity, sent_to_inventory) 
+                    VALUES (?, ?, ?, 0)
                 ");
 
-                $updateStmt->bind_param("i", $gradeRow['id']);
-                $updateStmt->execute();
-
-                $successCount++;
-            } else {
-                $errorMessages[] = "API Error for {$gradeRow['grade']}: HTTP $httpCode - $response";
+                $insertStmt->bind_param("isi", $batch_id, $grade, $quantity);
+                $insertStmt->execute();
             }
         }
 
-        if ($successCount > 0 && empty($errorMessages)) {
-            $message = "Graded eggs sent to inventory successfully.";
-        } elseif ($successCount > 0 && !empty($errorMessages)) {
-            $message = "Some records were sent, but some failed: " . implode(" | ", $errorMessages);
-        } else {
-            $message = "Failed to send records to inventory: " . implode(" | ", $errorMessages);
-        }
+        $remaining = $totalEggsInBatch - $totalGradedEggs;
+
+        $message = "Egg grading saved successfully. Remaining ungraded eggs: {$remaining}.";
+        $messageType = "success";
     }
 }
 
+/* =========================
+   GET CURRENT GRADING RECORDS
+========================= */
 $existingStmt = $conn->prepare("SELECT * FROM egg_grades WHERE batch_id = ?");
 $existingStmt->bind_param("i", $batch_id);
 $existingStmt->execute();
 $existingGrades = $existingStmt->get_result();
+
+$currentLarge = 0;
+$currentMedium = 0;
+$currentSmall = 0;
+$currentCracked = 0;
+$currentTotalGraded = 0;
+
+$gradeRows = [];
+
+while ($row = $existingGrades->fetch_assoc()) {
+    $gradeRows[] = $row;
+    $currentTotalGraded += intval($row['quantity']);
+
+    if ($row['grade'] === "Large") {
+        $currentLarge = intval($row['quantity']);
+    } elseif ($row['grade'] === "Medium") {
+        $currentMedium = intval($row['quantity']);
+    } elseif ($row['grade'] === "Small") {
+        $currentSmall = intval($row['quantity']);
+    } elseif ($row['grade'] === "Cracked") {
+        $currentCracked = intval($row['quantity']);
+    }
+}
+
+$currentRemaining = $totalEggsInBatch - $currentTotalGraded;
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4>Grade Egg Batch</h4>
+
+    <a href="dashboard.php?page=view_batches" class="btn btn-secondary">
+        Back to Batches
+    </a>
 </div>
 
 <div class="alert alert-secondary">
     <strong>Batch Code:</strong> <?= htmlspecialchars($batch['batch_code']); ?><br>
-    <strong>Total Eggs:</strong> <?= htmlspecialchars($batch['total_eggs']); ?><br>
+    <strong>Total Eggs in Batch:</strong> <?= htmlspecialchars($totalEggsInBatch); ?><br>
+    <strong>Currently Graded:</strong> <?= htmlspecialchars($currentTotalGraded); ?><br>
+    <strong>Remaining Ungraded:</strong> <?= htmlspecialchars(max(0, $currentRemaining)); ?><br>
     <strong>Collection Date:</strong> <?= htmlspecialchars($batch['collection_date']); ?>
 </div>
 
 <?php if (!empty($message)): ?>
-    <div class="alert alert-info">
+    <div class="alert alert-<?= $messageType; ?>">
         <?= htmlspecialchars($message); ?>
     </div>
 <?php endif; ?>
@@ -181,27 +216,57 @@ $existingGrades = $existingStmt->get_result();
 
                 <div class="col-md-3">
                     <label>Large</label>
-                    <input type="number" name="large" class="form-control" min="0" value="0">
+                    <input 
+                        type="number" 
+                        name="large" 
+                        class="form-control egg-input" 
+                        min="0" 
+                        value="<?= $currentLarge; ?>"
+                    >
                 </div>
 
                 <div class="col-md-3">
                     <label>Medium</label>
-                    <input type="number" name="medium" class="form-control" min="0" value="0">
+                    <input 
+                        type="number" 
+                        name="medium" 
+                        class="form-control egg-input" 
+                        min="0" 
+                        value="<?= $currentMedium; ?>"
+                    >
                 </div>
 
                 <div class="col-md-3">
                     <label>Small</label>
-                    <input type="number" name="small" class="form-control" min="0" value="0">
+                    <input 
+                        type="number" 
+                        name="small" 
+                        class="form-control egg-input" 
+                        min="0" 
+                        value="<?= $currentSmall; ?>"
+                    >
                 </div>
 
                 <div class="col-md-3">
                     <label>Cracked</label>
-                    <input type="number" name="cracked" class="form-control" min="0" value="0">
+                    <input 
+                        type="number" 
+                        name="cracked" 
+                        class="form-control egg-input" 
+                        min="0" 
+                        value="<?= $currentCracked; ?>"
+                    >
                 </div>
 
             </div>
 
-            <button type="submit" name="save_grading" class="btn btn-warning mt-3">
+            <div class="alert alert-light border mt-3">
+                <strong>Total Entered:</strong> <span id="totalEntered"><?= $currentTotalGraded; ?></span> /
+                <strong>Total Eggs:</strong> <?= $totalEggsInBatch; ?><br>
+                <strong>Remaining:</strong> <span id="remainingEggs"><?= max(0, $currentRemaining); ?></span>
+            </div>
+
+            <button type="submit" name="save_grading" class="btn btn-warning">
                 Save Grading
             </button>
 
@@ -222,8 +287,8 @@ $existingGrades = $existingStmt->get_result();
     </thead>
 
     <tbody>
-        <?php if ($existingGrades && $existingGrades->num_rows > 0): ?>
-            <?php while ($row = $existingGrades->fetch_assoc()): ?>
+        <?php if (!empty($gradeRows)): ?>
+            <?php foreach ($gradeRows as $row): ?>
                 <tr>
                     <td><?= htmlspecialchars($row['grade']); ?></td>
                     <td><?= htmlspecialchars($row['quantity']); ?></td>
@@ -235,7 +300,7 @@ $existingGrades = $existingStmt->get_result();
                         <?php endif; ?>
                     </td>
                 </tr>
-            <?php endwhile; ?>
+            <?php endforeach; ?>
         <?php else: ?>
             <tr>
                 <td colspan="3" class="text-center">No grading records yet.</td>
@@ -250,7 +315,40 @@ $existingGrades = $existingStmt->get_result();
         name="send_inventory" 
         class="btn btn-success"
         onclick="return confirm('Send unsent graded eggs to inventory API?');"
+        <?= empty($gradeRows) ? 'disabled' : ''; ?>
     >
         Send to Inventory API
     </button>
 </form>
+
+<script>
+const totalEggs = <?= $totalEggsInBatch; ?>;
+const inputs = document.querySelectorAll('.egg-input');
+const totalEntered = document.getElementById('totalEntered');
+const remainingEggs = document.getElementById('remainingEggs');
+
+function calculateTotal() {
+    let total = 0;
+
+    inputs.forEach(input => {
+        total += parseInt(input.value || 0);
+    });
+
+    let remaining = totalEggs - total;
+
+    totalEntered.textContent = total;
+    remainingEggs.textContent = remaining >= 0 ? remaining : 0;
+
+    if (total > totalEggs) {
+        totalEntered.classList.add('text-danger', 'fw-bold');
+        remainingEggs.classList.add('text-danger', 'fw-bold');
+    } else {
+        totalEntered.classList.remove('text-danger', 'fw-bold');
+        remainingEggs.classList.remove('text-danger', 'fw-bold');
+    }
+}
+
+inputs.forEach(input => {
+    input.addEventListener('input', calculateTotal);
+});
+</script>
