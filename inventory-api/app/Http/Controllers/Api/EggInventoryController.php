@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\EggInventory;
+use Illuminate\Http\Request;
+
+class EggInventoryController extends Controller
+{
+    public function index()
+    {
+        $inventory = EggInventory::orderBy('id', 'desc')->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Egg inventory records retrieved successfully.',
+            'data' => $inventory
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'batch_code' => 'required|string|max:255',
+            'egg_size' => 'required|in:Large,Medium,Small,Cracked',
+            'quantity' => 'required|integer|min:1',
+            'received_date' => 'required|date',
+        ]);
+
+        $inventory = EggInventory::create($validated);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Egg inventory saved successfully.',
+            'data' => $inventory
+        ], 201);
+    }
+
+    public function summary()
+    {
+        $summary = EggInventory::selectRaw('egg_size, SUM(quantity) as total_quantity')
+            ->groupBy('egg_size')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Egg inventory summary retrieved successfully.',
+            'data' => $summary
+        ]);
+    }
+}
