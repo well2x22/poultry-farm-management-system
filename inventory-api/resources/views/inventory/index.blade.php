@@ -96,7 +96,7 @@
                         <th>Date Created</th>
                     </tr>
                 </thead>
-z
+
                 <tbody>
                     @forelse ($inventories as $inventory)
                         <tr>
