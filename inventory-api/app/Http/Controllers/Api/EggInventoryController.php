@@ -19,39 +19,39 @@ class EggInventoryController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'batch_code' => 'required|string|max:255',
-            'egg_size' => 'required|in:Large,Medium,Small,Cracked',
-            'quantity' => 'required|integer|min:1',
-            'received_date' => 'required|date',
-        ]);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'batch_code' => 'required|string|max:255',
+        'egg_size' => 'required|in:Extra Large,Large,Medium,Small',
+        'quantity' => 'required|integer|min:1',
+        'received_date' => 'required|date',
+    ]);
 
-        $inventory = EggInventory::where('batch_code', $validated['batch_code'])
-            ->where('egg_size', $validated['egg_size'])
-            ->first();
+    $inventory = EggInventory::where('batch_code', $validated['batch_code'])
+        ->where('egg_size', $validated['egg_size'])
+        ->first();
 
-        if ($inventory) {
-            $inventory->quantity = $validated['quantity'];
-            $inventory->received_date = $validated['received_date'];
-            $inventory->save();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Existing egg inventory updated successfully.',
-                'data' => $inventory
-            ], 200);
-        }
-
-        $inventory = EggInventory::create($validated);
+    if ($inventory) {
+        $inventory->quantity = $validated['quantity'];
+        $inventory->received_date = $validated['received_date'];
+        $inventory->save();
 
         return response()->json([
             'status' => true,
-            'message' => 'New egg inventory saved successfully.',
+            'message' => 'Existing egg inventory updated without duplicating stock.',
             'data' => $inventory
-        ], 201);
+        ], 200);
     }
+
+    $inventory = EggInventory::create($validated);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'New egg inventory saved successfully.',
+        'data' => $inventory
+    ], 201);
+}
 
     public function summary()
     {

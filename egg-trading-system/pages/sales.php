@@ -13,7 +13,7 @@ $messageType = "info";
 $editMode = false;
 $editSale = null;
 
-$allowed_grades = ['Large', 'Medium', 'Small', 'Cracked'];
+$allowed_grades = ['Extra Large', 'Large', 'Medium', 'Small'];
 
 /* =========================
    GET AVAILABLE STOCK TO SELL

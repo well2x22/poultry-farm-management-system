@@ -53,7 +53,7 @@
     <div class="row mb-4">
 
         @php
-            $sizes = ['Large', 'Medium', 'Small', 'Cracked'];
+            $sizes = ['Extra Large', 'Large', 'Medium', 'Small'];
         @endphp
 
         @foreach ($sizes as $size)
