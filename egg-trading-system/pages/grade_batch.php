@@ -18,9 +18,6 @@ if (!isset($_GET['id'])) {
 
 $batch_id = intval($_GET['id']);
 
-/* =========================
-   GET BATCH INFORMATION
-========================= */
 $stmt = $conn->prepare("SELECT * FROM egg_batches WHERE id = ?");
 $stmt->bind_param("i", $batch_id);
 $stmt->execute();
@@ -34,9 +31,6 @@ if (!$batch) {
 
 $totalEggsInBatch = intval($batch['total_eggs']);
 
-/* =========================
-   CHECK IF ALREADY SENT
-========================= */
 $sentCheckStmt = $conn->prepare("
     SELECT COUNT(*) AS total_sent 
     FROM egg_grades 
@@ -53,17 +47,17 @@ $alreadySent = $totalSentRecords > 0;
    SAVE GRADING
 ========================= */
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_grading'])) {
+    $extra_large = intval($_POST['extra_large'] ?? 0);
     $large = intval($_POST['large'] ?? 0);
     $medium = intval($_POST['medium'] ?? 0);
     $small = intval($_POST['small'] ?? 0);
-    $cracked = intval($_POST['cracked'] ?? 0);
 
-    $totalGradedEggs = $large + $medium + $small + $cracked;
+    $totalGradedEggs = $extra_large + $large + $medium + $small;
 
     if ($alreadySent) {
         $message = "This batch was already sent to inventory. You cannot edit grading after sending.";
         $messageType = "danger";
-    } elseif ($large < 0 || $medium < 0 || $small < 0 || $cracked < 0) {
+    } elseif ($extra_large < 0 || $large < 0 || $medium < 0 || $small < 0) {
         $message = "Egg quantities cannot be negative.";
         $messageType = "danger";
     } elseif ($totalGradedEggs <= 0) {
@@ -71,7 +65,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_grading'])) {
         $messageType = "danger";
     } elseif ($totalGradedEggs > $totalEggsInBatch) {
         $excess = $totalGradedEggs - $totalEggsInBatch;
-
         $message = "Graded eggs cannot exceed total eggs in the batch. Total eggs: {$totalEggsInBatch}, graded eggs: {$totalGradedEggs}, excess: {$excess}.";
         $messageType = "danger";
     } else {
@@ -80,10 +73,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_grading'])) {
         $deleteStmt->execute();
 
         $grades = [
+            "Extra Large" => $extra_large,
             "Large" => $large,
             "Medium" => $medium,
-            "Small" => $small,
-            "Cracked" => $cracked
+            "Small" => $small
         ];
 
         foreach ($grades as $grade => $quantity) {
@@ -208,16 +201,16 @@ $existingStmt = $conn->prepare("
     SELECT * 
     FROM egg_grades 
     WHERE batch_id = ?
-    ORDER BY FIELD(grade, 'Large', 'Medium', 'Small', 'Cracked')
+    ORDER BY FIELD(grade, 'Extra Large', 'Large', 'Medium', 'Small')
 ");
 $existingStmt->bind_param("i", $batch_id);
 $existingStmt->execute();
 $existingGrades = $existingStmt->get_result();
 
+$currentExtraLarge = 0;
 $currentLarge = 0;
 $currentMedium = 0;
 $currentSmall = 0;
-$currentCracked = 0;
 $currentTotalGraded = 0;
 
 $gradeRows = [];
@@ -228,22 +221,19 @@ while ($row = $existingGrades->fetch_assoc()) {
     $quantity = intval($row['quantity']);
     $currentTotalGraded += $quantity;
 
-    if ($row['grade'] === "Large") {
+    if ($row['grade'] === "Extra Large") {
+        $currentExtraLarge = $quantity;
+    } elseif ($row['grade'] === "Large") {
         $currentLarge = $quantity;
     } elseif ($row['grade'] === "Medium") {
         $currentMedium = $quantity;
     } elseif ($row['grade'] === "Small") {
         $currentSmall = $quantity;
-    } elseif ($row['grade'] === "Cracked") {
-        $currentCracked = $quantity;
     }
 }
 
 $currentNotGraded = max(0, $totalEggsInBatch - $currentTotalGraded);
 
-/* =========================
-   CHECK UNSENT RECORDS
-========================= */
 $unsentStmt = $conn->prepare("
     SELECT COUNT(*) AS total_unsent 
     FROM egg_grades 
@@ -259,10 +249,6 @@ $canSendToInventory = $totalUnsentRecords > 0;
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4>Grade Egg Batch</h4>
-
-    <a href="dashboard.php?page=view_batches" class="btn btn-secondary">
-        Back to Batches
-    </a>
 </div>
 
 <div class="alert alert-secondary">
@@ -323,6 +309,18 @@ $canSendToInventory = $totalUnsentRecords > 0;
             <div class="row">
 
                 <div class="col-md-3">
+                    <label>Extra Large</label>
+                    <input 
+                        type="number" 
+                        name="extra_large" 
+                        class="form-control egg-input" 
+                        min="0" 
+                        value="<?= $currentExtraLarge; ?>"
+                        <?= $alreadySent ? 'readonly' : ''; ?>
+                    >
+                </div>
+
+                <div class="col-md-3">
                     <label>Large</label>
                     <input 
                         type="number" 
@@ -354,18 +352,6 @@ $canSendToInventory = $totalUnsentRecords > 0;
                         class="form-control egg-input" 
                         min="0" 
                         value="<?= $currentSmall; ?>"
-                        <?= $alreadySent ? 'readonly' : ''; ?>
-                    >
-                </div>
-
-                <div class="col-md-3">
-                    <label>Cracked</label>
-                    <input 
-                        type="number" 
-                        name="cracked" 
-                        class="form-control egg-input" 
-                        min="0" 
-                        value="<?= $currentCracked; ?>"
                         <?= $alreadySent ? 'readonly' : ''; ?>
                     >
                 </div>

@@ -13,10 +13,6 @@ $batches = $conn->query("SELECT * FROM egg_batches ORDER BY id DESC");
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4>Egg Batches</h4>
-
-    <a href="dashboard.php?page=add_batch" class="btn btn-warning">
-        Add New Batch
-    </a>
 </div>
 
 <div class="card shadow-sm">
