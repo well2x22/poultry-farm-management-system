@@ -34,7 +34,7 @@
 
     <h3>Inventory Dashboard</h3>
     <p class="text-muted">
-        This page displays egg inventory records received from the PHP Egg Trading and Grading System.
+        This page displays egg inventory records received from the Poultry Egg System.
     </p>
 
     <!-- TOTAL EGGS CARD -->

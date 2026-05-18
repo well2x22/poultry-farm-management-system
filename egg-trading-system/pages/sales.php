@@ -9,21 +9,25 @@ if (!isset($conn)) {
 /** @var mysqli $conn */
 
 $message = "";
+$messageType = "info";
 $editMode = false;
 $editSale = null;
 
 $allowed_grades = ['Large', 'Medium', 'Small', 'Cracked'];
 
 /* =========================
-FUNCTION: GET AVAILABLE STOCK
+   GET AVAILABLE STOCK TO SELL
+   Formula:
+   Available To Sell = Total Graded Eggs - Total Sold Eggs
+   Laravel inventory is NOT affected.
 ========================= */
-function getAvailableStock($conn, $grade, $exclude_sale_id = 0) {
+function getAvailableStockToSell($conn, $grade, $exclude_sale_id = 0) {
     $gradedQty = 0;
     $soldQty = 0;
 
     $stmt = $conn->prepare("
-        SELECT COALESCE(SUM(quantity), 0) AS total
-        FROM egg_grades
+        SELECT COALESCE(SUM(quantity), 0) AS total 
+        FROM egg_grades 
         WHERE grade = ?
     ");
     $stmt->bind_param("s", $grade);
@@ -34,7 +38,8 @@ function getAvailableStock($conn, $grade, $exclude_sale_id = 0) {
         $stmt = $conn->prepare("
             SELECT COALESCE(SUM(quantity), 0) AS total 
             FROM egg_sales 
-            WHERE grade = ? AND id != ?
+            WHERE grade = ? 
+            AND id != ?
         ");
         $stmt->bind_param("si", $grade, $exclude_sale_id);
     } else {
@@ -54,6 +59,8 @@ function getAvailableStock($conn, $grade, $exclude_sale_id = 0) {
 
 /* =========================
    DELETE SALE
+   Deleting a sale automatically returns eggs to available stock
+   because available stock is computed as graded - sold.
 ========================= */
 if (isset($_GET['delete_id'])) {
     $delete_id = intval($_GET['delete_id']);
@@ -62,9 +69,11 @@ if (isset($_GET['delete_id'])) {
     $stmt->bind_param("i", $delete_id);
 
     if ($stmt->execute()) {
-        $message = "Sale deleted successfully.";
+        $message = "Sale deleted successfully. The eggs are now available for selling again.";
+        $messageType = "success";
     } else {
         $message = "Error deleting sale: " . $stmt->error;
+        $messageType = "danger";
     }
 }
 
@@ -85,6 +94,7 @@ if (isset($_GET['edit_id'])) {
         $editSale = $result->fetch_assoc();
     } else {
         $message = "Sale record not found.";
+        $messageType = "danger";
     }
 }
 
@@ -101,20 +111,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $total_amount = $quantity * $price_per_piece;
 
-    $availableStock = getAvailableStock($conn, $grade, $sale_id);
+    $availableStock = in_array($grade, $allowed_grades)
+        ? getAvailableStockToSell($conn, $grade, $sale_id)
+        : 0;
 
     if ($customer_id <= 0) {
         $message = "Please select a customer.";
+        $messageType = "danger";
     } elseif (!in_array($grade, $allowed_grades)) {
         $message = "Invalid egg size selected.";
+        $messageType = "danger";
     } elseif ($quantity <= 0) {
         $message = "Quantity must be greater than zero.";
+        $messageType = "danger";
     } elseif ($quantity > $availableStock) {
-        $message = "Not enough stock. Available $grade eggs: " . $availableStock;
+        $message = "Not enough {$grade} eggs to sell. Available {$grade} eggs: {$availableStock}.";
+        $messageType = "danger";
     } elseif ($price_per_piece <= 0) {
         $message = "Price per piece must be greater than zero.";
+        $messageType = "danger";
     } elseif ($sale_date === '') {
         $message = "Sale date is required.";
+        $messageType = "danger";
     } else {
         if ($sale_id > 0) {
             $stmt = $conn->prepare("
@@ -135,11 +153,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             );
 
             if ($stmt->execute()) {
-                $message = "Sale updated successfully.";
+                $message = "Sale updated successfully. Egg stock to sell was recalculated.";
+                $messageType = "success";
                 $editMode = false;
                 $editSale = null;
             } else {
                 $message = "Error updating sale: " . $stmt->error;
+                $messageType = "danger";
             }
         } else {
             $stmt = $conn->prepare("
@@ -159,9 +179,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             );
 
             if ($stmt->execute()) {
-                $message = "Sale recorded successfully.";
+                $message = "Sale recorded successfully. Sold eggs were deducted from the PHP system stock.";
+                $messageType = "success";
             } else {
                 $message = "Error recording sale: " . $stmt->error;
+                $messageType = "danger";
             }
         }
     }
@@ -171,10 +193,35 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
    STOCK SUMMARY
 ========================= */
 $stockSummary = [];
+$totalRemainingToSell = 0;
 
 foreach ($allowed_grades as $gradeName) {
-    $stockSummary[$gradeName] = getAvailableStock($conn, $gradeName);
+    $stockSummary[$gradeName] = getAvailableStockToSell($conn, $gradeName);
+    $totalRemainingToSell += $stockSummary[$gradeName];
 }
+
+$allBatchEggs = intval($conn->query("
+    SELECT COALESCE(SUM(total_eggs), 0) AS total 
+    FROM egg_batches
+")->fetch_assoc()['total']);
+
+$allGradedEggs = intval($conn->query("
+    SELECT COALESCE(SUM(quantity), 0) AS total 
+    FROM egg_grades
+")->fetch_assoc()['total']);
+
+$totalSoldEggs = intval($conn->query("
+    SELECT COALESCE(SUM(quantity), 0) AS total 
+    FROM egg_sales
+")->fetch_assoc()['total']);
+
+/*
+    These are display values after sold eggs deduction.
+    Laravel inventory remains unchanged.
+*/
+$totalEggsAfterSold = max(0, $allBatchEggs - $totalSoldEggs);
+$totalGradedEggsAfterSold = max(0, $allGradedEggs - $totalSoldEggs);
+$totalNotGradedEggs = max(0, $totalEggsAfterSold - $totalGradedEggsAfterSold);
 
 $customers = $conn->query("SELECT * FROM customers ORDER BY customer_name ASC");
 
@@ -194,18 +241,13 @@ $sales = $conn->query("
 
 </div>
 
-<?php if (!empty($message)): ?>
-    <div class="alert alert-info">
-        <?= htmlspecialchars($message); ?>
-    </div>
-<?php endif; ?>
-
+<!-- AVAILABLE TO SELL PER SIZE -->
 <div class="row mb-4">
     <?php foreach ($stockSummary as $gradeName => $available): ?>
         <div class="col-md-3">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h6><?= htmlspecialchars($gradeName); ?> Available</h6>
+                    <h6><?= htmlspecialchars($gradeName); ?> Available To Sell</h6>
                     <h3><?= $available; ?></h3>
                 </div>
             </div>
@@ -213,6 +255,7 @@ $sales = $conn->query("
     <?php endforeach; ?>
 </div>
 
+<!-- ADD / EDIT SALE FORM -->
 <div class="card shadow-sm mb-4">
     <div class="card-body">
 
@@ -256,8 +299,7 @@ $sales = $conn->query("
                             value="<?= $gradeName; ?>"
                             <?= $editMode && $editSale['grade'] === $gradeName ? 'selected' : ''; ?>
                         >
-                            <?= $gradeName; ?> 
-                            | Available: <?= $stockSummary[$gradeName]; ?>
+                            <?= $gradeName; ?> | Available To Sell: <?= $stockSummary[$gradeName]; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -324,7 +366,7 @@ $sales = $conn->query("
         <tr>
             <th>Customer</th>
             <th>Egg Size</th>
-            <th>Quantity</th>
+            <th>Quantity Sold</th>
             <th>Price/Piece</th>
             <th>Total Amount</th>
             <th>Sale Date</th>
@@ -353,7 +395,7 @@ $sales = $conn->query("
                         <a 
                             href="dashboard.php?page=sales&delete_id=<?= $row['id']; ?>" 
                             class="btn btn-sm btn-danger"
-                            onclick="return confirm('Are you sure you want to delete this sale?');"
+                            onclick="return confirm('Are you sure you want to delete this sale? This will return the eggs to available stock.');"
                         >
                             Delete
                         </a>

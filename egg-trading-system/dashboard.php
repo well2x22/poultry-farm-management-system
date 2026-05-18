@@ -28,18 +28,32 @@ if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
 
-$totalBatches = $conn->query("SELECT COUNT(*) AS total FROM egg_batches")->fetch_assoc()['total'];
-
-$totalEggs = $conn->query("
-    SELECT COALESCE(SUM(total_eggs), 0) AS total 
+$totalBatches = $conn->query("
+    SELECT COUNT(*) AS total 
     FROM egg_batches
 ")->fetch_assoc()['total'];
 
-$totalGradedEggs = $conn->query("
+$allBatchEggs = intval($conn->query("
+    SELECT COALESCE(SUM(total_eggs), 0) AS total 
+    FROM egg_batches
+")->fetch_assoc()['total']);
+
+$allGradedEggs = intval($conn->query("
     SELECT COALESCE(SUM(quantity), 0) AS total 
     FROM egg_grades
-")->fetch_assoc()['total'];
+")->fetch_assoc()['total']);
 
+$totalSoldEggs = intval($conn->query("
+    SELECT COALESCE(SUM(quantity), 0) AS total 
+    FROM egg_sales
+")->fetch_assoc()['total']);
+
+/*
+    Displayed totals after sales deduction
+*/
+$totalEggs = max(0, $allBatchEggs - $totalSoldEggs);
+$totalGradedEggs = max(0, $allGradedEggs - $totalSoldEggs);
+$totalRemainingEggsToSell = max(0, $allGradedEggs - $totalSoldEggs);
 $totalNotGradedEggs = max(0, $totalEggs - $totalGradedEggs);
 
 $totalSales = $conn->query("
@@ -132,8 +146,8 @@ $totalCustomers = $conn->query("
     <div class="col-md-2">
         <div class="card shadow-sm dashboard-card">
             <div class="card-body">
-                <h6>Total Customers</h6>
-                <h2><?= $totalCustomers; ?></h2>
+                <h6>Sold Eggs</h6>
+                <h2><?= $totalSoldEggs; ?></h2>
             </div>
         </div>
     </div>
