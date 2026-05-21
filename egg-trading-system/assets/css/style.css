@@ -1,16 +1,23 @@
-/* =========================
-   LOGIN PAGE BACKGROUND
-========================= */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    font-size: 14px;
+}
 
-.login-bg {
+/* LOGIN PAGE */
+body.login-bg {
     min-height: 100vh;
-    background-image: linear-gradient(
+    background: linear-gradient(
         rgba(0, 0, 0, 0.45),
         rgba(0, 0, 0, 0.45)
-    ), url("../img/eggs.jpg");
+    ),
+    url("../img/eggs.jpg");
+
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 .login-card {
@@ -24,10 +31,7 @@
     color: #3b2f1f;
 }
 
-/* =========================
-   DASHBOARD / GENERAL UI
-========================= */
-
+/* DASHBOARD / GENERAL UI */
 .dashboard-card {
     border-left: 5px solid #ffc107;
 }
@@ -39,14 +43,11 @@
 .btn {
     border-radius: 3px;
 }
+
 .table {
     background-color: white;
 }
 
 .navbar .btn {
     margin-left: 4px;
-}
-
-body {
-    font-size: 14px;
 }
