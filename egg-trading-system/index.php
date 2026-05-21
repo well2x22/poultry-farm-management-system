@@ -17,7 +17,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $username = trim($_POST['username'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
-    $stmt = $conn->prepare("SELECT id, fullname, username, password, role FROM users WHERE username = ? LIMIT 1");
+    $stmt = $conn->prepare("
+        SELECT id, fullname, username, password, role 
+        FROM users 
+        WHERE username = ? 
+        LIMIT 1
+    ");
+
     $stmt->bind_param("s", $username);
     $stmt->execute();
 
@@ -53,7 +59,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         rel="stylesheet"
     >
 
-    <link href="assets/css/style.css?v=2" rel="stylesheet">
+    <link href="assets/css/style.css?v=4" rel="stylesheet">
 </head>
 
 <body class="login-bg">
@@ -114,6 +120,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </button>
 
                     </form>
+
+                    <div class="text-center mt-3">
+                        <a href="register.php" class="text-decoration-none">
+                            Create new account
+                        </a>
+                    </div>
 
                 </div>
             </div>
