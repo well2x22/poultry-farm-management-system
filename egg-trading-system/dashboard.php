@@ -28,6 +28,10 @@ if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
 
+/* =========================
+   DASHBOARD TOTALS
+========================= */
+
 $totalBatches = $conn->query("
     SELECT COUNT(*) AS total 
     FROM egg_batches
@@ -48,22 +52,13 @@ $totalSoldEggs = intval($conn->query("
     FROM egg_sales
 ")->fetch_assoc()['total']);
 
-/*
-    Displayed totals after sales deduction
-*/
 $totalEggs = max(0, $allBatchEggs - $totalSoldEggs);
 $totalGradedEggs = max(0, $allGradedEggs - $totalSoldEggs);
-$totalRemainingEggsToSell = max(0, $allGradedEggs - $totalSoldEggs);
 $totalNotGradedEggs = max(0, $totalEggs - $totalGradedEggs);
 
 $totalSales = $conn->query("
     SELECT COALESCE(SUM(total_amount), 0) AS total 
     FROM egg_sales
-")->fetch_assoc()['total'];
-
-$totalCustomers = $conn->query("
-    SELECT COUNT(*) AS total 
-    FROM customers
 ")->fetch_assoc()['total'];
 ?>
 
@@ -73,8 +68,12 @@ $totalCustomers = $conn->query("
     <title>Dashboard - Poultry Egg Trading System</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="assets/css/style.css" rel="stylesheet">
+    <link 
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+        rel="stylesheet"
+    >
+
+    <link href="assets/css/style.css?v=5" rel="stylesheet">
 </head>
 
 <body class="bg-light">
@@ -98,74 +97,83 @@ $totalCustomers = $conn->query("
     </div>
 </nav>
 
-<div class="container mt-4">
+<div class="container-fluid px-5 mt-4">
 
-    <!-- DASHBOARD HEADER ALWAYS VISIBLE -->
     <h3>Dashboard</h3>
     <p>Welcome, <?= htmlspecialchars($_SESSION['fullname']); ?></p>
 
-    <!-- DASHBOARD CARDS ALWAYS VISIBLE -->
-    <div class="row mt-4">
+    <div class="row mt-4 g-3">
 
-    <div class="col-md-2">
-        <div class="card shadow-sm dashboard-card">
-            <div class="card-body">
-                <h6>Total Batches</h6>
-                <h2><?= $totalBatches; ?></h2>
+        <div class="col-md-2">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Total Batches</h6>
+                    <h2 class="dashboard-number">
+                        <?= $totalBatches; ?>
+                    </h2>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-2">
-        <div class="card shadow-sm dashboard-card">
-            <div class="card-body">
-                <h6>Total Eggs</h6>
-                <h2><?= $totalEggs; ?></h2>
+        <div class="col-md-2">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Total Eggs</h6>
+                    <h2 class="dashboard-number">
+                        <?= $totalEggs; ?>
+                    </h2>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-2">
-        <div class="card shadow-sm dashboard-card">
-            <div class="card-body">
-                <h6>Graded Eggs</h6>
-                <h2><?= $totalGradedEggs; ?></h2>
+        <div class="col-md-2">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Graded Eggs</h6>
+                    <h2 class="dashboard-number">
+                        <?= $totalGradedEggs; ?>
+                    </h2>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-2">
-        <div class="card shadow-sm dashboard-card">
-            <div class="card-body">
-                <h6>Not Graded</h6>
-                <h2><?= $totalNotGradedEggs; ?></h2>
+        <div class="col-md-2">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Not Graded</h6>
+                    <h2 class="dashboard-number">
+                        <?= $totalNotGradedEggs; ?>
+                    </h2>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-2">
-        <div class="card shadow-sm dashboard-card">
-            <div class="card-body">
-                <h6>Sold Eggs</h6>
-                <h2><?= $totalSoldEggs; ?></h2>
+        <div class="col-md-2">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Sold Eggs</h6>
+                    <h2 class="dashboard-number">
+                        <?= $totalSoldEggs; ?>
+                    </h2>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-2">
-        <div class="card shadow-sm dashboard-card">
-            <div class="card-body">
-                <h6>Total Sales</h6>
-                <h2>₱<?= number_format($totalSales, 2); ?></h2>
+        <div class="col-md-2">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Total Sales</h6>
+                    <h2 class="dashboard-number sales-number">
+                        ₱<?= number_format($totalSales, 2); ?>
+                    </h2>
+                </div>
             </div>
         </div>
-    </div>
 
-</div>
+    </div>
 
     <hr>
 
-    <!-- MODULE CONTENT LOADS BELOW DASHBOARD CARDS -->
     <div class="mt-4">
 
         <?php
@@ -193,5 +201,6 @@ $totalCustomers = $conn->query("
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

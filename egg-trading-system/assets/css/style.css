@@ -5,7 +5,10 @@ body {
     font-size: 14px;
 }
 
-/* LOGIN PAGE */
+/* =========================
+   LOGIN PAGE
+========================= */
+
 body.login-bg {
     min-height: 100vh;
     background: linear-gradient(
@@ -31,9 +34,35 @@ body.login-bg {
     color: #3b2f1f;
 }
 
-/* DASHBOARD / GENERAL UI */
+/* =========================
+   DASHBOARD / GENERAL UI
+========================= */
+
 .dashboard-card {
     border-left: 5px solid #ffc107;
+    min-height: 105px;
+}
+
+.dashboard-card .card-body {
+    padding: 16px 18px;
+}
+
+.dashboard-card h6 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.dashboard-number {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+.sales-number {
+    white-space: nowrap;
+    font-size: 25px;
 }
 
 .card {
