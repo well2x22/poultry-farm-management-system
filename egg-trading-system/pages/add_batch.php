@@ -1,42 +1,19 @@
 <?php
-if (!isset($conn)) {
-    require_once __DIR__ . "/../config/database.php";
-
-    $database = new Database();
-    $conn = $database->connect();
-}
-
-/** @var mysqli $conn */
+require_once __DIR__ . "/../includes/api_client.php";
 
 $message = "";
+$messageType = "info";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $batch_code = trim($_POST['batch_code'] ?? '');
-    $collection_date = $_POST['collection_date'] ?? '';
-    $total_eggs = intval($_POST['total_eggs'] ?? 0);
-    $remarks = trim($_POST['remarks'] ?? '');
+    $response = postToApi("add_batch.php", [
+        "batch_code" => trim($_POST['batch_code'] ?? ''),
+        "collection_date" => $_POST['collection_date'] ?? '',
+        "total_eggs" => intval($_POST['total_eggs'] ?? 0),
+        "remarks" => trim($_POST['remarks'] ?? '')
+    ]);
 
-    if ($batch_code === '') {
-        $message = "Batch code is required.";
-    } elseif ($collection_date === '') {
-        $message = "Collection date is required.";
-    } elseif ($total_eggs <= 0) {
-        $message = "Total eggs must be greater than zero.";
-    } else {
-        $stmt = $conn->prepare("
-            INSERT INTO egg_batches 
-            (batch_code, collection_date, total_eggs, remarks) 
-            VALUES (?, ?, ?, ?)
-        ");
-
-        $stmt->bind_param("ssis", $batch_code, $collection_date, $total_eggs, $remarks);
-
-        if ($stmt->execute()) {
-            $message = "Egg batch added successfully.";
-        } else {
-            $message = "Error: " . $stmt->error;
-        }
-    }
+    $message = $response["message"] ?? "Unknown response.";
+    $messageType = ($response["status"] ?? false) ? "success" : "danger";
 }
 ?>
 
@@ -45,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </div>
 
 <?php if (!empty($message)): ?>
-    <div class="alert alert-info">
+    <div class="alert alert-<?= htmlspecialchars($messageType); ?>">
         <?= htmlspecialchars($message); ?>
     </div>
 <?php endif; ?>

@@ -11,16 +11,16 @@
       "RelativeMoniker": "D:0:0:{60628EBD-A98B-4411-86C0-3320A5A12960}|Poultry_Farm_Inventory_System.csproj|solutionrelative:mainform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{60628EBD-A98B-4411-86C0-3320A5A12960}|Poultry_Farm_Inventory_System.csproj|C:\\xampp\\htdocs\\poultry-farm-management-system\\Poultry_Farm_Inventory_System\\mainform.resx||{81828910-B8B3-4D2B-99A3-067027C180C1}",
+      "RelativeMoniker": "D:0:0:{60628EBD-A98B-4411-86C0-3320A5A12960}|Poultry_Farm_Inventory_System.csproj|solutionrelative:mainform.resx||{81828910-B8B3-4D2B-99A3-067027C180C1}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{60628EBD-A98B-4411-86C0-3320A5A12960}|Poultry_Farm_Inventory_System.csproj|C:\\xampp\\htdocs\\poultry-farm-management-system\\Poultry_Farm_Inventory_System\\egginventory.cs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{60628EBD-A98B-4411-86C0-3320A5A12960}|Poultry_Farm_Inventory_System.csproj|solutionrelative:egginventory.cs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{60628EBD-A98B-4411-86C0-3320A5A12960}|Poultry_Farm_Inventory_System.csproj|C:\\xampp\\htdocs\\poultry-farm-management-system\\Poultry_Farm_Inventory_System\\apiresponse.cs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{60628EBD-A98B-4411-86C0-3320A5A12960}|Poultry_Farm_Inventory_System.csproj|solutionrelative:apiresponse.cs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{60628EBD-A98B-4411-86C0-3320A5A12960}|Poultry_Farm_Inventory_System.csproj|C:\\xampp\\htdocs\\poultry-farm-management-system\\Poultry_Farm_Inventory_System\\mainform.resx||{81828910-B8B3-4D2B-99A3-067027C180C1}",
-      "RelativeMoniker": "D:0:0:{60628EBD-A98B-4411-86C0-3320A5A12960}|Poultry_Farm_Inventory_System.csproj|solutionrelative:mainform.resx||{81828910-B8B3-4D2B-99A3-067027C180C1}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{60628EBD-A98B-4411-86C0-3320A5A12960}|Poultry_Farm_Inventory_System.csproj|C:\\xampp\\htdocs\\poultry-farm-management-system\\Poultry_Farm_Inventory_System\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -42,7 +42,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 2,
               "Title": "MainForm.resx",
               "DocumentMoniker": "C:\\xampp\\htdocs\\poultry-farm-management-system\\Poultry_Farm_Inventory_System\\MainForm.resx",
               "RelativeDocumentMoniker": "MainForm.resx",
@@ -78,7 +78,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "ApiResponse.cs.cs",
               "DocumentMoniker": "C:\\xampp\\htdocs\\poultry-farm-management-system\\Poultry_Farm_Inventory_System\\ApiResponse.cs.cs",
               "RelativeDocumentMoniker": "ApiResponse.cs.cs",
@@ -86,12 +86,11 @@
               "RelativeToolTip": "ApiResponse.cs.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-24T15:20:58.287Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-24T15:20:58.287Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "EggInventory.cs.cs",
               "DocumentMoniker": "C:\\xampp\\htdocs\\poultry-farm-management-system\\Poultry_Farm_Inventory_System\\EggInventory.cs.cs",
               "RelativeDocumentMoniker": "EggInventory.cs.cs",
@@ -99,8 +98,7 @@
               "RelativeToolTip": "EggInventory.cs.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-24T15:18:42.177Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-24T15:18:42.177Z"
             },
             {
               "$type": "Document",
@@ -110,7 +108,7 @@
               "RelativeDocumentMoniker": "MainForm.cs",
               "ToolTip": "C:\\xampp\\htdocs\\poultry-farm-management-system\\Poultry_Farm_Inventory_System\\MainForm.cs",
               "RelativeToolTip": "MainForm.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAB5AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-24T15:14:38.361Z",
               "EditorCaption": ""

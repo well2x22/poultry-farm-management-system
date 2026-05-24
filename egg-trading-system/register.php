@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-require_once __DIR__ . "/config/database.php";
+require_once __DIR__ . "/includes/api_client.php";
 
 if (isset($_SESSION['user_id'])) {
     header("Location: dashboard.php");
@@ -11,66 +11,19 @@ if (isset($_SESSION['user_id'])) {
 $registerError = "";
 $registerSuccess = "";
 
-$database = new Database();
-$conn = $database->connect();
-
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $fullname = trim($_POST['fullname'] ?? '');
-    $username = trim($_POST['username'] ?? '');
-    $password = trim($_POST['password'] ?? '');
-    $confirmPassword = trim($_POST['confirm_password'] ?? '');
-    $role = "staff";
+    $response = postToApi("auth.php", [
+        "action" => "register",
+        "fullname" => trim($_POST['fullname'] ?? ''),
+        "username" => trim($_POST['username'] ?? ''),
+        "password" => trim($_POST['password'] ?? ''),
+        "confirm_password" => trim($_POST['confirm_password'] ?? '')
+    ]);
 
-    if ($fullname === '') {
-        $registerError = "Full name is required.";
-    } elseif ($username === '') {
-        $registerError = "Username is required.";
-    } elseif (strlen($username) < 4) {
-        $registerError = "Username must be at least 4 characters.";
-    } elseif ($password === '') {
-        $registerError = "Password is required.";
-    } elseif (strlen($password) < 6) {
-        $registerError = "Password must be at least 6 characters.";
-    } elseif ($password !== $confirmPassword) {
-        $registerError = "Passwords do not match.";
+    if ($response["status"] ?? false) {
+        $registerSuccess = $response["message"] ?? "Registration successful.";
     } else {
-        $checkStmt = $conn->prepare("
-            SELECT id 
-            FROM users 
-            WHERE username = ? 
-            LIMIT 1
-        ");
-
-        $checkStmt->bind_param("s", $username);
-        $checkStmt->execute();
-
-        $checkResult = $checkStmt->get_result();
-
-        if ($checkResult && $checkResult->num_rows > 0) {
-            $registerError = "Username already exists.";
-        } else {
-            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-            $stmt = $conn->prepare("
-                INSERT INTO users 
-                (fullname, username, password, role) 
-                VALUES (?, ?, ?, ?)
-            ");
-
-            $stmt->bind_param(
-                "ssss",
-                $fullname,
-                $username,
-                $hashedPassword,
-                $role
-            );
-
-            if ($stmt->execute()) {
-                $registerSuccess = "Registration successful. You can now log in.";
-            } else {
-                $registerError = "Registration failed: " . $stmt->error;
-            }
-        }
+        $registerError = $response["message"] ?? "Registration failed.";
     }
 }
 ?>
@@ -86,7 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         rel="stylesheet"
     >
 
-    <link href="assets/css/style.css?v=4" rel="stylesheet">
+    <link href="assets/css/style.css?v=6" rel="stylesheet">
 </head>
 
 <body class="login-bg">

@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-require_once __DIR__ . "/config/database.php";
+require_once __DIR__ . "/includes/api_client.php";
 
 if (isset($_SESSION['user_id'])) {
     header("Location: dashboard.php");
@@ -11,39 +11,23 @@ if (isset($_SESSION['user_id'])) {
 $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $database = new Database();
-    $conn = $database->connect();
+    $response = postToApi("auth.php", [
+        "action" => "login",
+        "username" => trim($_POST['username'] ?? ''),
+        "password" => trim($_POST['password'] ?? '')
+    ]);
 
-    $username = trim($_POST['username'] ?? '');
-    $password = trim($_POST['password'] ?? '');
+    if ($response["status"] ?? false) {
+        $user = $response["data"];
 
-    $stmt = $conn->prepare("
-        SELECT id, fullname, username, password, role 
-        FROM users 
-        WHERE username = ? 
-        LIMIT 1
-    ");
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['fullname'] = $user['fullname'];
+        $_SESSION['role'] = $user['role'];
 
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-
-    $result = $stmt->get_result();
-
-    if ($result && $result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-
-        if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['fullname'] = $user['fullname'];
-            $_SESSION['role'] = $user['role'];
-
-            header("Location: dashboard.php");
-            exit();
-        } else {
-            $error = "Password is incorrect.";
-        }
+        header("Location: dashboard.php");
+        exit();
     } else {
-        $error = "Username not found.";
+        $error = $response["message"] ?? "Login failed.";
     }
 }
 ?>
@@ -59,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         rel="stylesheet"
     >
 
-    <link href="assets/css/style.css?v=4" rel="stylesheet">
+    <link href="assets/css/style.css?v=6" rel="stylesheet">
 </head>
 
 <body class="login-bg">
@@ -126,7 +110,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             Create new account
                         </a>
                     </div>
-
                 </div>
             </div>
 
