@@ -1,0 +1,13 @@
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_Farm_Inventory_System.csproj.AssemblyReference.cache
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_Farm_Inventory_System.MainForm.resources
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_Farm_Inventory_System.Properties.Resources.resources
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_Farm_Inventory_System.csproj.GenerateResource.cache
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_Farm_Inventory_System.csproj.CoreCompileInputs.cache
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\bin\Debug\Poultry_Farm_Inventory_System.exe.config
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\bin\Debug\Poultry_Farm_Inventory_System.exe
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\bin\Debug\Poultry_Farm_Inventory_System.pdb
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\bin\Debug\Newtonsoft.Json.dll
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\bin\Debug\Newtonsoft.Json.xml
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_.821DC93F.Up2Date
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_Farm_Inventory_System.exe
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_Farm_Inventory_System.pdb
