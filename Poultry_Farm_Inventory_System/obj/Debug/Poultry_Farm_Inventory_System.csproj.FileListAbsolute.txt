@@ -11,3 +11,4 @@ C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\bin
 C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_.821DC93F.Up2Date
 C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_Farm_Inventory_System.exe
 C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_Farm_Inventory_System.pdb
+C:\xampp\htdocs\poultry-farm-management-system\Poultry_Farm_Inventory_System\obj\Debug\Poultry_Farm_Inventory_System.exe.config

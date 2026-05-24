@@ -1,13 +1,22 @@
 <?php
-header("Content-Type: application/json");
 
-$conn = new mysqli("localhost", "root", "", "egg_trading_db");
+$servername = "localhost";
+$username = "root";
+$password = "";
+$database = "egg_trading_db";
+
+$conn = new mysqli($servername, $username, $password, $database);
 
 if ($conn->connect_error) {
+    http_response_code(500);
+
     echo json_encode([
-        "status" => "error",
-        "message" => "Database connection failed"
+        "status" => false,
+        "message" => "Database connection failed: " . $conn->connect_error,
+        "data" => []
     ]);
-    exit;
+
+    exit();
 }
-?>
+
+$conn->set_charset("utf8mb4");

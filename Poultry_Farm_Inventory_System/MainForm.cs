@@ -11,7 +11,7 @@ namespace Poultry_Farm_Inventory_System
 {
     public partial class MainForm : Form
     {
-        private readonly string apiUrl = "http://localhost/poultry-farm-management-system/egg-trading-system/api/egg_inventory.php";
+        private readonly string apiUrl = "http://localhost/poultry-farm-management-system/poultry-api/egg_inventory.php";
 
         private Label lblTotalEggs;
         private Label lblExtraLarge;

@@ -1,12 +1,14 @@
 <?php
 
-class Database {
+class Database
+{
     private $host = "localhost";
     private $username = "root";
     private $password = "";
     private $database = "egg_trading_db";
 
-    public function connect() {
+    public function connect()
+    {
         $conn = new mysqli(
             $this->host,
             $this->username,
@@ -17,6 +19,8 @@ class Database {
         if ($conn->connect_error) {
             die("Database connection failed: " . $conn->connect_error);
         }
+
+        $conn->set_charset("utf8mb4");
 
         return $conn;
     }

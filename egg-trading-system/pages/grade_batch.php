@@ -105,7 +105,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['save_grading'])) {
    SEND GRADED EGGS TO INVENTORY API
 ========================= */
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['send_inventory'])) {
-    $apiUrl = "http://127.0.0.1:8001/api/egg-inventory";
+
+    /*
+        New API layer path.
+        This replaces the old Laravel API URL.
+    */
+    $apiUrl = "http://localhost/poultry-farm-management-system/poultry-api/save_inventory.php";
 
     $gradeStmt = $conn->prepare("
         SELECT 
@@ -113,7 +118,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['send_inventory'])) {
             egg_grades.grade,
             egg_grades.quantity,
             egg_grades.sent_to_inventory,
-            egg_batches.batch_code
+            egg_batches.batch_code,
+            egg_batches.collection_date
         FROM egg_grades
         INNER JOIN egg_batches 
             ON egg_grades.batch_id = egg_batches.id
@@ -134,11 +140,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['send_inventory'])) {
         $errorMessages = [];
 
         while ($gradeRow = $gradesResult->fetch_assoc()) {
+
             $data = [
                 "batch_code" => $gradeRow['batch_code'],
                 "egg_size" => $gradeRow['grade'],
                 "quantity" => intval($gradeRow['quantity']),
-                "received_date" => date("Y-m-d")
+                "received_date" => $gradeRow['collection_date']
             ];
 
             $ch = curl_init($apiUrl);
@@ -164,7 +171,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['send_inventory'])) {
                 continue;
             }
 
-            if ($httpCode === 200 || $httpCode === 201) {
+            $decodedResponse = json_decode($response, true);
+
+            if (
+                ($httpCode === 200 || $httpCode === 201) &&
+                isset($decodedResponse['status']) &&
+                $decodedResponse['status'] === true
+            ) {
                 $updateStmt = $conn->prepare("
                     UPDATE egg_grades 
                     SET sent_to_inventory = 1 
@@ -176,7 +189,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['send_inventory'])) {
 
                 $successCount++;
             } else {
-                $errorMessages[] = "API error for {$gradeRow['grade']}: HTTP {$httpCode}. Response: {$response}";
+                $apiMessage = $decodedResponse['message'] ?? $response;
+
+                $errorMessages[] = "API error for {$gradeRow['grade']}: HTTP {$httpCode}. Response: {$apiMessage}";
             }
         }
 
